@@ -56,6 +56,14 @@
         transition: background 0.2s ease, color 0.2s ease;
       }
 
+      .layout {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        justify-content: center;
+        width: min(720px, 100%);
+      }
+
       .calculator {
         width: 320px;
         background: var(--card-bg);
@@ -143,40 +151,137 @@
         grid-column: span 2;
       }
 
+      .log {
+        width: 260px;
+        background: var(--card-bg);
+        color: var(--text);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+        border: 1px solid var(--display-border);
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .log-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 0 0 8px 0;
+      }
+
+      .log-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .log-clear {
+        border: none;
+        background: var(--btn-control);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.2s ease;
+      }
+
+      .log-clear:active {
+        transform: translateY(1px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .log-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 140px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .log-item {
+        font-size: 14px;
+        background: var(--display-bg);
+        border: 1px solid var(--display-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .log-expression {
+        color: var(--text);
+      }
+
+      .log-result {
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+      }
+
+      .log-error {
+        color: var(--btn-clear);
+      }
+
+      @media (max-width: 720px) {
+        .layout {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .log {
+          width: 100%;
+          max-width: 320px;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="calculator">
-      <div class="calculator-header">
-        <button id="themeToggle" class="theme-toggle" type="button">
-          Темная тема
-        </button>
+    <div class="layout">
+      <div class="log" aria-live="polite">
+        <div class="log-header">
+          <p class="log-title">Журнал операций</p>
+          <button id="clearHistory" class="log-clear" type="button">Очистить</button>
+        </div>
+        <ul id="history" class="log-list"></ul>
       </div>
-      <div id="display" class="display">0</div>
-      <div class="grid">
-        <button class="btn-control btn-clear" data-action="clear">C</button>
-        <button class="btn-control" data-action="backspace">⌫</button>
-        <button class="btn-control" data-action="sign">±</button>
-        <button class="btn-operator" data-value="/">÷</button>
+      <div class="calculator">
+        <div class="calculator-header">
+          <button id="themeToggle" class="theme-toggle" type="button">
+            Темная тема
+          </button>
+        </div>
+        <div id="display" class="display">0</div>
+        <div class="grid">
+          <button class="btn-control btn-clear" data-action="clear">C</button>
+          <button class="btn-control" data-action="backspace">⌫</button>
+          <button class="btn-control" data-action="sign">±</button>
+          <button class="btn-operator" data-value="/">÷</button>
 
-        <button data-value="7">7</button>
-        <button data-value="8">8</button>
-        <button data-value="9">9</button>
-        <button class="btn-operator" data-value="*">×</button>
+          <button data-value="7">7</button>
+          <button data-value="8">8</button>
+          <button data-value="9">9</button>
+          <button class="btn-operator" data-value="*">×</button>
 
-        <button data-value="4">4</button>
-        <button data-value="5">5</button>
-        <button data-value="6">6</button>
-        <button class="btn-operator" data-value="-">−</button>
+          <button data-value="4">4</button>
+          <button data-value="5">5</button>
+          <button data-value="6">6</button>
+          <button class="btn-operator" data-value="-">−</button>
 
-        <button data-value="1">1</button>
-        <button data-value="2">2</button>
-        <button data-value="3">3</button>
-        <button class="btn-operator" data-value="+">+</button>
+          <button data-value="1">1</button>
+          <button data-value="2">2</button>
+          <button data-value="3">3</button>
+          <button class="btn-operator" data-value="+">+</button>
 
-        <button class="btn-zero" data-value="0">0</button>
-        <button data-value=".">.</button>
-        <button class="btn-equals" data-action="equals">=</button>
+          <button class="btn-zero" data-value="0">0</button>
+          <button data-value=".">.</button>
+          <button class="btn-equals" data-action="equals">=</button>
+        </div>
       </div>
     </div>
 
@@ -185,7 +290,10 @@
         const display = document.getElementById("display");
         const grid = document.querySelector(".grid");
         const themeToggle = document.getElementById("themeToggle");
+        const historyList = document.getElementById("history");
+        const clearHistoryBtn = document.getElementById("clearHistory");
         const THEME_KEY = "calculator-theme";
+        const MAX_HISTORY = 10;
         let expression = "";
 
         function updateDisplay(value) {
@@ -227,15 +335,46 @@
           if (!expression) {
             return;
           }
+          const original = expression;
           try {
             const sanitized = expression.replace(/[^0-9+\-*/.]/g, "");
             const result = Function(`"use strict"; return (${sanitized})`)();
             expression = Number.isFinite(result) ? result.toString() : "";
             updateDisplay(expression || "Ошибка");
+            appendToHistory(original, expression || "Ошибка", !expression);
           } catch (err) {
             expression = "";
             updateDisplay("Ошибка");
+            appendToHistory(original, "Ошибка", true);
           }
+        }
+
+        function appendToHistory(expr, result, isError = false) {
+          const item = document.createElement("li");
+          item.className = "log-item";
+
+          const expSpan = document.createElement("span");
+          expSpan.className = "log-expression";
+          expSpan.textContent = expr || "—";
+
+          const resSpan = document.createElement("span");
+          resSpan.className = "log-result";
+          resSpan.textContent = isError ? "Ошибка" : result;
+          if (isError) {
+            resSpan.classList.add("log-error");
+          }
+
+          item.appendChild(expSpan);
+          item.appendChild(resSpan);
+          historyList.prepend(item);
+
+          while (historyList.children.length > MAX_HISTORY) {
+            historyList.removeChild(historyList.lastElementChild);
+          }
+        }
+
+        function clearHistory() {
+          historyList.innerHTML = "";
         }
 
         grid.addEventListener("click", (event) => {
@@ -310,6 +449,8 @@
           const isDark = document.body.classList.contains("dark");
           applyTheme(isDark ? "light" : "dark");
         });
+
+        clearHistoryBtn.addEventListener("click", clearHistory);
 
         initTheme();
       })();
