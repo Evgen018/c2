@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Простой калькулятор</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .calculator {
+        width: 320px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        padding: 24px;
+      }
+
+      .display {
+        width: 100%;
+        height: 64px;
+        margin-bottom: 16px;
+        padding: 12px;
+        border: 2px solid #d9d9d9;
+        border-radius: 12px;
+        text-align: right;
+        font-size: 28px;
+        background: #fafafa;
+        overflow: hidden;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      button {
+        height: 56px;
+        border: none;
+        border-radius: 12px;
+        font-size: 20px;
+        cursor: pointer;
+        transition: transform 0.05s ease, box-shadow 0.05s ease;
+      }
+
+      button:active {
+        transform: translateY(1px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-operator {
+        background: #ffe6cc;
+      }
+
+      .btn-control {
+        background: #ffd6d6;
+      }
+
+      .btn-clear {
+        background: #ff6b6b;
+        color: #fff;
+      }
+
+      .btn-equals {
+        background: #b7f5a1;
+        grid-column: span 2;
+      }
+
+      .btn-zero {
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <div id="display" class="display">0</div>
+      <div class="grid">
+        <button class="btn-control btn-clear" data-action="clear">C</button>
+        <button class="btn-control" data-action="backspace">⌫</button>
+        <button class="btn-control" data-action="sign">±</button>
+        <button class="btn-operator" data-value="/">÷</button>
+
+        <button data-value="7">7</button>
+        <button data-value="8">8</button>
+        <button data-value="9">9</button>
+        <button class="btn-operator" data-value="*">×</button>
+
+        <button data-value="4">4</button>
+        <button data-value="5">5</button>
+        <button data-value="6">6</button>
+        <button class="btn-operator" data-value="-">−</button>
+
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button class="btn-operator" data-value="+">+</button>
+
+        <button class="btn-zero" data-value="0">0</button>
+        <button data-value=".">.</button>
+        <button class="btn-equals" data-action="equals">=</button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const display = document.getElementById("display");
+        const grid = document.querySelector(".grid");
+        let expression = "";
+
+        function updateDisplay(value) {
+          display.textContent = value || "0";
+        }
+
+        function appendValue(value) {
+          // Запрещаем ввод двух операторов подряд
+          if (/[+\-*/]$/.test(expression) && /[+\-*/]/.test(value)) {
+            expression = expression.slice(0, -1) + value;
+          } else {
+            expression += value;
+          }
+          updateDisplay(expression);
+        }
+
+        function compute() {
+          if (!expression) {
+            return;
+          }
+          try {
+            const sanitized = expression.replace(/[^0-9+\-*/.]/g, "");
+            const result = Function(`"use strict"; return (${sanitized})`)();
+            expression = Number.isFinite(result) ? result.toString() : "";
+            updateDisplay(expression || "Ошибка");
+          } catch (err) {
+            expression = "";
+            updateDisplay("Ошибка");
+          }
+        }
+
+        grid.addEventListener("click", (event) => {
+          const target = event.target;
+          if (target.tagName !== "BUTTON") {
+            return;
+          }
+
+          const { value } = target.dataset;
+          const action = target.dataset.action;
+
+          if (value) {
+            appendValue(value);
+            return;
+          }
+
+          switch (action) {
+            case "clear":
+              expression = "";
+              updateDisplay("");
+              break;
+            case "backspace":
+              expression = expression.slice(0, -1);
+              updateDisplay(expression);
+              break;
+            case "sign":
+              if (!expression) {
+                return;
+              }
+              try {
+                const lastNumberMatch = expression.match(/(-?\d+\.?\d*)$/);
+                if (!lastNumberMatch) {
+                  return;
+                }
+                const lastNumber = lastNumberMatch[0];
+                const toggled =
+                  lastNumber.startsWith("-") ?
+                    lastNumber.slice(1) :
+                    "-" + lastNumber;
+                expression =
+                  expression.slice(0, -lastNumber.length) + toggled;
+                updateDisplay(expression);
+              } catch (_err) {
+                updateDisplay("Ошибка");
+              }
+              break;
+            case "equals":
+              compute();
+              break;
+            default:
+              break;
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          const key = event.key;
+          if (/^[0-9.+\-*/]$/.test(key)) {
+            appendValue(key);
+          } else if (key === "Enter" || key === "=") {
+            event.preventDefault();
+            compute();
+          } else if (key === "Backspace") {
+            expression = expression.slice(0, -1);
+            updateDisplay(expression);
+          } else if (key === "Escape") {
+            expression = "";
+            updateDisplay("");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
